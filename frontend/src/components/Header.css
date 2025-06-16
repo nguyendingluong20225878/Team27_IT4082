@@ -1,0 +1,71 @@
+.app-header {
+    background-color: #007bff;
+    /* Màu xanh của header */
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    /* Giữ header ở trên cùng khi cuộn */
+    top: 0;
+    z-index: 1000;
+    /* Đảm bảo header nằm trên các nội dung khác */
+}
+
+.app-header-left .app-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+.app-header-left .app-title:hover {
+    opacity: 0.8;
+}
+
+.app-header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    /* Khoảng cách giữa thông tin người dùng và nút logout */
+}
+
+.user-info {
+    font-size: 1em;
+    opacity: 0.9;
+}
+
+/* Kế thừa từ .logout-btn nhưng có thể điều chỉnh thêm cho header */
+.header-logout-btn {
+    background-color: #dc3545;
+    /* Đỏ hơn cho nút logout trên header */
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.header-logout-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Responsive cho Header */
+@media (max-width: 768px) {
+    .app-header {
+        flex-direction: column;
+        padding: 10px 15px;
+        text-align: center;
+    }
+
+    .app-header-right {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+    }
+}

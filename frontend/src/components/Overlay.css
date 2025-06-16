@@ -1,0 +1,34 @@
+.overlay {
+    position: fixed;
+    /* Cố định trên toàn bộ màn hình */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    /* --- CÁC THUỘC TÍNH MỚI CHO BACKGROUND HÌNH ẢNH --- */
+    background-image: url('../chung-cu-la-gi-thumbnail.jpg');
+    /* Thay đổi đường dẫn đến hình ảnh của bạn */
+    background-size: cover;
+    /* Đảm bảo hình ảnh phủ toàn bộ khu vực */
+    background-position: center;
+    /* Căn giữa hình ảnh */
+    background-repeat: no-repeat;
+    /* Không lặp lại hình ảnh */
+
+    /* Áp dụng hiệu ứng làm mờ */
+    filter: blur(5px);
+    /* Điều chỉnh giá trị 'px' để thay đổi độ mờ */
+    -webkit-filter: blur(5px);
+    /* Dành cho trình duyệt WebKit (Safari, Chrome cũ) */
+
+    /* Giảm độ tương phản và độ sáng để làm hình ảnh ít nổi bật hơn (tùy chọn) */
+    /* filter: blur(5px) brightness(0.7) contrast(0.8); */
+
+    /* Đảm bảo nội dung không bị kéo căng hoặc biến dạng do filter */
+    transform: scale(1.02);
+    /* Kéo hình ảnh lớn hơn một chút để tránh viền trắng khi làm mờ */
+
+    z-index: 0;
+    /* Đặt phía sau nội dung chính */
+}
