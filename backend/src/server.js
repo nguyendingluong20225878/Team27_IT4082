@@ -3,7 +3,8 @@ dotenv.config();
 
 const express = require('express')
 const app = express();
-const sequelize = require('./database');
+// Đảm bảo bạn import các model từ models/index.js để Sequelize nhận diện tất cả các model
+const { sequelize, Vehicle, Apartment, Fee, User, Resident, Invoice, InvoicePayment, InvoiceFee, UtilityBill, ResidentApartment } = require('./models'); // Đã thêm import tất cả các model bạn có
 const routes = require('./routes');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -11,21 +12,18 @@ const cors = require('cors');
 // Debugging: Log JWT_SECRET after dotenv config
 console.log('Loaded JWT_SECRET from .env:', process.env.JWT_SECRET);
 
-// const ReportUser = require('./models/ReportUser');
-const FeedbackUser = require('./models/FeedbackUser');
-const Utility_bill = require('./models/utility_bill');
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(cookieParser()); 
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Add logging middleware
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-    next();
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
 });
 
 // Routes
@@ -38,7 +36,7 @@ app.get('/health', (req, res) => {
 
 // Health check endpoint
 app.get('/api/v1/health', (req, res) => {
-    res.json({ status: 'ok', message: 'Server is running' });
+  res.json({ status: 'ok', message: 'Server is running' });
 });
 
 // Error handling middleware
@@ -51,26 +49,17 @@ app.use((err, req, res, next) => {
   });
 });
 
-// // Hàm chỉ drop và tạo lại bảng FeedbackUser
-// async function syncFeedbackUserTableOnly() {
-//   try {
-//     await FeedbackUser.sync({ force: true });
-//     console.log('FeedbackUser table synced (dropped and recreated) successfully.');
-//   } catch (err) {
-//     console.error('Error syncing FeedbackUser table:', err);
-//   }
-// }
-
-// // Gọi hàm này khi cần drop và tạo lại bảng FeedbackUser
-// syncFeedbackUserTableOnly();
-
-sequelize.sync({force: false}) // Set force: true to drop and recreate the database
-    .then(() => {
-        console.log('Database synced successfully.');
-        app.listen(port, () => {
-            console.log(`Server is running on port ${port}`);
-        }); 
-    })
-    .catch((err) => {
-        console.error('Error syncing database:', err);
-});
+// *** PHẦN QUAN TRỌNG CẦN THAY ĐỔI VÀ SAU ĐÓ ĐẢM BẢO CHUYỂN LẠI ***
+// Đồng bộ database
+// TẠM THỜI ĐẶT force: true ĐỂ TẠO LẠI BẢNG VỚI CỘT 'id' BỊ THIẾU
+// SAU KHI CHẠY THÀNH CÔNG VÀ KIỂM TRA DB, HÃY ĐỔI LẠI THÀNH force: false HOẶC XÓA DÒNG NÀY ĐI
+sequelize.sync({ force: false }) // <--- ĐÃ THAY ĐỔI TỪ false SANG true
+  .then(() => {
+    console.log('Database synced successfully (Tables dropped and recreated if force: true was set).');
+    app.listen(port, () => {
+      console.log(`Server is running on pornt ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Error syncing database:', err);
+  });

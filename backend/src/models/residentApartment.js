@@ -1,24 +1,26 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../database');
+
 const ResidentApartment = sequelize.define('ResidentApartment', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.BIGINT, // ĐÃ SỬA: Thay đổi từ UUID sang BIGINT
     primaryKey: true,
+    autoIncrement: true, // Thêm autoIncrement
+    // defaultValue: DataTypes.UUIDV4, // XÓA DÒNG NÀY (chỉ dành cho UUID)
   },
   residentId: {
-    type: DataTypes.UUID,
+    type: DataTypes.BIGINT, // ĐÃ SỬA: Thay đổi từ UUID sang BIGINT
     allowNull: false,
     references: {
-      model: 'residents',
+      model: 'residents', // Tên bảng (lowercase, plural)
       key: 'id',
     },
   },
   apartmentId: {
-    type: DataTypes.STRING(6),
+    type: DataTypes.BIGINT, // ĐÃ SỬA: Thay đổi từ STRING(6) sang BIGINT
     allowNull: false,
     references: {
-      model: 'apartments',
+      model: 'apartments', // Tên bảng (lowercase, plural)
       key: 'id',
     },
   },

@@ -33,12 +33,6 @@ const createFee = async (req, res) => {
 const getFee = async (req, res) => {
   try {
     const fees = await Fee.findAll();
-    if (!fees || fees.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No fees found'
-      });
-    }
     res.status(200).json({
       success: true,
       message: 'Fees fetched successfully',
@@ -92,7 +86,7 @@ const deleteFee = async (req, res) => {
   }
 };
 
-// Get fee collection data (Thống kê các khoản thu)
+// Get fee collection data
 const getFeeCollectionData = async (req, res) => {
   try {
     const feeCollectionData = await UtilityBillFee.findAll({
@@ -113,7 +107,7 @@ const getFeeCollectionData = async (req, res) => {
   }
 };
 
-// Get fee type distribution (Thống kê các khoản thu)
+// Get fee type distribution
 const getFeeTypeDistribution = async (req, res) => {
   try {
     const feeTypeDistribution = await Fee.findAll({
@@ -131,7 +125,7 @@ const getFeeTypeDistribution = async (req, res) => {
   }
 };
 
-// Get fee summary (Thống kê các khoản thu)
+// Get fee summary
 const getFeeSummary = async (req, res) => {
   try {
     const totalFees = await Fee.count();
@@ -195,4 +189,4 @@ module.exports = {
   getFeeTypeDistribution,
   getFeeSummary,
   importFeeFromExcel,
-}; 
+};

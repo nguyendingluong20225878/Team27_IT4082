@@ -1,5 +1,5 @@
 const { Apartment, ResidentApartment, Resident } = require('../models/index');
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 
 // Get apartment residents info
 const getApartmentResidentsInfo = async (req, res) => {
@@ -8,9 +8,7 @@ const getApartmentResidentsInfo = async (req, res) => {
     const limit = 7;
     const offset = (page - 1) * limit;
 
-    const totalApartments = await ResidentApartment.count({
-      where: { is_owner: true },
-    });
+    const totalApartments = await Apartment.count();
 
     const apartments = await Apartment.findAll({
       attributes: ['id', 'status', 'address_number', 'area'],
@@ -18,11 +16,12 @@ const getApartmentResidentsInfo = async (req, res) => {
         {
           model: ResidentApartment,
           attributes: ['is_owner'],
-          where: { is_owner: true },
+          required: false,
           include: [
             {
               model: Resident,
               attributes: ['name', 'phoneNumber', 'email'],
+              required: false
             }
           ]
         }
@@ -34,7 +33,7 @@ const getApartmentResidentsInfo = async (req, res) => {
     const residentCounts = await ResidentApartment.findAll({
       attributes: [
         'apartmentId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('residentId')), 'memberCount']
+        [fn('COUNT', col('residentId')), 'memberCount']
       ],
       group: ['apartmentId']
     });
@@ -45,19 +44,22 @@ const getApartmentResidentsInfo = async (req, res) => {
     });
 
     const result = apartments.map(apt => {
-      const residentApartment = apt.ResidentApartments && apt.ResidentApartments[0];
-      const resident = residentApartment && residentApartment.Resident;
+      if (!apt) return null;
+
+      const ownerRA = apt.ResidentApartments?.find(ra => ra?.is_owner);
+      const resident = ownerRA?.Resident;
+
       return {
         apartmentId: apt.id,
         address_number: apt.address_number,
         area: apt.area,
         status: apt.status,
-        ownerName: resident ? resident.name : null,
-        ownerPhoneNumber: resident ? resident.phoneNumber : null,
-        ownerEmail: resident ? resident.email : null,
+        ownerName: resident?.name || null,
+        ownerPhoneNumber: resident?.phoneNumber || null,
+        ownerEmail: resident?.email || null,
         memberCount: countMap[apt.id] ? parseInt(countMap[apt.id]) : 0
       };
-    });
+    }).filter(Boolean); // loại bỏ phần tử null
 
     const totalPages = Math.ceil(totalApartments / limit);
 
@@ -78,7 +80,7 @@ const getApartmentResidentsInfo = async (req, res) => {
 // Create apartment(s)
 const createApartment = async (req, res) => {
   try {
-    const apartmentsData = req.body; 
+    const apartmentsData = req.body;
 
     if (!Array.isArray(apartmentsData) || apartmentsData.length === 0) {
       return res.status(400).json({ message: 'Input must be a non-empty array' });
@@ -103,7 +105,7 @@ const createApartment = async (req, res) => {
   }
 };
 
-// Add apartment and resident (including owner)
+// Add apartment and resident
 const addApartmentAndResident = async (req, res) => {
   try {
     const { apartmentId, address_number, area, residentData, role_in_family, is_owner, joined_at } = req.body;
@@ -121,7 +123,7 @@ const addApartmentAndResident = async (req, res) => {
       id: apartmentId,
       address_number,
       area,
-      status: 'Resident', 
+      status: 'Resident',
     });
 
     let resident = await Resident.findOne({ where: { cic: residentData.cic } });
@@ -244,4 +246,4 @@ module.exports = {
   updateApartment,
   deleteApartment,
   getTotalApartments,
-}; 
+};

@@ -31,6 +31,21 @@ const createResidents = async (req, res) => {
   }
 };
 
+// ✅ Get all residents (for ResidentPage frontend)
+const getAllResidents = async (req, res) => {
+  try {
+    const residents = await Resident.findAll();
+    res.status(200).json({
+      success: true,
+      message: 'Residents fetched successfully',
+      data: residents
+    });
+  } catch (err) {
+    console.error('Error fetching residents:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // Get all residents in apartments
 const getAllResidentsInApartment = async (req, res) => {
   try {
@@ -80,7 +95,7 @@ const getAllResidentsInApartment = async (req, res) => {
   }
 };
 
-// Get resident by ID (Truy vấn thông tin NK)
+// Get resident by ID
 const getResidentById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -96,7 +111,7 @@ const getResidentById = async (req, res) => {
   }
 };
 
-// Update resident (Sửa thông tin NK)
+// Update resident
 const updateResident = async (req, res) => {
   try {
     const { id } = req.params;
@@ -125,7 +140,7 @@ const updateResident = async (req, res) => {
   }
 };
 
-// Delete resident (Xóa thông tin NK)
+// Delete resident
 const deleteResident = async (req, res) => {
   try {
     const { id } = req.params;
@@ -142,7 +157,7 @@ const deleteResident = async (req, res) => {
   }
 };
 
-// Delete member from apartment (Xóa thành viên khỏi căn hộ)
+// Delete member from apartment
 const deleteMember = async (req, res) => {
   try {
     const { residentId, apartmentId } = req.body;
@@ -192,10 +207,11 @@ const getUserResidenceInfo = async (req, res) => {
 
 module.exports = {
   createResidents,
+  getAllResidents, // ✅ Export mới thêm
   getAllResidentsInApartment,
   getResidentById,
   updateResident,
   deleteResident,
   deleteMember,
   getUserResidenceInfo,
-}; 
+};

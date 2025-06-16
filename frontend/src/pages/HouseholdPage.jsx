@@ -5,7 +5,7 @@ import './pages.css';
 function HouseholdPage() {
     const [apartments, setApartments] = useState([]);
     const [formData, setFormData] = useState({
-        id: '',
+        apartmentId: '',
         address_number: '',
         area: '',
         status: 'Resident'
@@ -15,10 +15,14 @@ function HouseholdPage() {
 
     const fetchApartments = async () => {
         try {
-            const res = await axios.get('/api/apartments/info?page=1');
-            setApartments(res.data.data);
+            const res = await axios.get('/api/v1/apartments', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
+            setApartments(res.data.data || []);
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi fetchApartments:', err);
         }
     };
 
@@ -34,12 +38,21 @@ function HouseholdPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('/api/apartments', [formData]);
+            await axios.post('/api/v1/apartments', [{
+                id: formData.apartmentId,
+                address_number: formData.address_number,
+                area: formData.area,
+                status: formData.status
+            }], {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             alert('Thêm hộ khẩu thành công');
-            setFormData({ id: '', address_number: '', area: '', status: 'Resident' });
+            setFormData({ apartmentId: '', address_number: '', area: '', status: 'Resident' });
             fetchApartments();
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi khi thêm hộ khẩu:', err);
         }
     };
 
@@ -50,27 +63,35 @@ function HouseholdPage() {
 
     const handleEditSubmit = async () => {
         try {
-            await axios.put(`/api/apartments/${editing.id}`, editing);
+            await axios.put(`/api/v1/apartments/${editing.apartmentId}`, editing, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             setEditing(null);
             fetchApartments();
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi khi cập nhật hộ khẩu:', err);
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Xoá hộ khẩu này?')) return;
         try {
-            await axios.delete(`/api/apartments/${id}`);
+            await axios.delete(`/api/v1/apartments/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             fetchApartments();
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi khi xoá hộ khẩu:', err);
         }
     };
 
     const filtered = apartments.filter(a =>
-        a.address_number.toString().includes(search) ||
-        a.id.toString().includes(search)
+        a.address_number?.toString().includes(search) ||
+        a.apartmentId?.toString().includes(search)
     );
 
     return (
@@ -89,7 +110,7 @@ function HouseholdPage() {
             <form onSubmit={handleSubmit} className="account-form">
                 <h4>Thêm hộ khẩu mới</h4>
                 <div className="form-grid">
-                    <input name="id" placeholder="Mã hộ (id)" value={formData.id} onChange={handleChange} required />
+                    <input name="apartmentId" placeholder="Mã hộ (id)" value={formData.apartmentId} onChange={handleChange} required />
                     <input name="address_number" placeholder="Địa chỉ số" value={formData.address_number} onChange={handleChange} required />
                     <input name="area" placeholder="Diện tích" value={formData.area} onChange={handleChange} required />
                     <select name="status" value={formData.status} onChange={handleChange} required>
@@ -114,11 +135,11 @@ function HouseholdPage() {
                     </thead>
                     <tbody>
                         {filtered.map(apt => (
-                            <tr key={apt.id}>
-                                <td>{editing?.id === apt.id ? <input name="id" value={editing.id} disabled /> : apt.id}</td>
-                                <td>{editing?.id === apt.id ? <input name="address_number" value={editing.address_number} onChange={handleEditChange} /> : apt.address_number}</td>
-                                <td>{editing?.id === apt.id ? <input name="area" value={editing.area} onChange={handleEditChange} /> : apt.area}</td>
-                                <td>{editing?.id === apt.id ? (
+                            <tr key={apt.apartmentId}>
+                                <td>{editing?.apartmentId === apt.apartmentId ? <input name="apartmentId" value={editing.apartmentId} disabled /> : apt.apartmentId}</td>
+                                <td>{editing?.apartmentId === apt.apartmentId ? <input name="address_number" value={editing.address_number} onChange={handleEditChange} /> : apt.address_number}</td>
+                                <td>{editing?.apartmentId === apt.apartmentId ? <input name="area" value={editing.area} onChange={handleEditChange} /> : apt.area}</td>
+                                <td>{editing?.apartmentId === apt.apartmentId ? (
                                     <select name="status" value={editing.status} onChange={handleEditChange}>
                                         <option value="Resident">Resident</option>
                                         <option value="Business">Business</option>
@@ -126,7 +147,7 @@ function HouseholdPage() {
                                     </select>
                                 ) : apt.status}</td>
                                 <td>
-                                    {editing?.id === apt.id ? (
+                                    {editing?.apartmentId === apt.apartmentId ? (
                                         <>
                                             <button onClick={handleEditSubmit}>Lưu</button>
                                             <button onClick={() => setEditing(null)}>Huỷ</button>
@@ -134,12 +155,17 @@ function HouseholdPage() {
                                     ) : (
                                         <>
                                             <button onClick={() => setEditing(apt)}>Sửa</button>
-                                            <button onClick={() => handleDelete(apt.id)}>Xoá</button>
+                                            <button onClick={() => handleDelete(apt.apartmentId)}>Xoá</button>
                                         </>
                                     )}
                                 </td>
                             </tr>
                         ))}
+                        {filtered.length === 0 && (
+                            <tr>
+                                <td colSpan="5" style={{ textAlign: 'center' }}>Không có dữ liệu</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

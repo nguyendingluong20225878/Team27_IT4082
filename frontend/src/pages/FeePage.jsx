@@ -16,10 +16,14 @@ function FeePage() {
 
     const fetchFees = async () => {
         try {
-            const res = await axios.get('/api/fees');
+            const res = await axios.get('/api/v1/fees', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             setFees(res.data.data || []);
         } catch (err) {
-            console.error(err);
+            console.error('Fetch fees error:', err);
         }
     };
 
@@ -35,12 +39,17 @@ function FeePage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('/api/fees', formData);
+            await axios.post('/api/v1/fees', formData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             alert('Thêm khoản thu thành công');
             setFormData({ name: '', amount: '', description: '', type: '', due_date: '', status: 'active' });
             fetchFees();
         } catch (err) {
-            console.error(err);
+            console.error('Add fee error:', err);
+            alert('Lỗi khi thêm khoản thu');
         }
     };
 
@@ -51,21 +60,29 @@ function FeePage() {
 
     const handleEditSubmit = async () => {
         try {
-            await axios.put(`/api/fees/${editing.id}`, editing);
+            await axios.put(`/api/v1/fees/${editing.id}`, editing, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             setEditing(null);
             fetchFees();
         } catch (err) {
-            console.error(err);
+            console.error('Update fee error:', err);
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Xoá khoản thu này?')) return;
         try {
-            await axios.delete(`/api/fees/${id}`);
+            await axios.delete(`/api/v1/fees/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             fetchFees();
         } catch (err) {
-            console.error(err);
+            console.error('Delete fee error:', err);
         }
     };
 
@@ -84,7 +101,7 @@ function FeePage() {
                         <option value="monthly">Thu hàng tháng</option>
                         <option value="one-time">Thu một lần</option>
                     </select>
-                    <input name="due_date" type="date" placeholder="Hạn nộp" value={formData.due_date} onChange={handleChange} required />
+                    <input name="due_date" type="date" value={formData.due_date} onChange={handleChange} required />
                     <select name="status" value={formData.status} onChange={handleChange}>
                         <option value="active">Đang áp dụng</option>
                         <option value="inactive">Ngừng áp dụng</option>

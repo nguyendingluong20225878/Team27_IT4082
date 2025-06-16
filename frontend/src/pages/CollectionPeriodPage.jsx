@@ -7,12 +7,19 @@ function CollectionPeriodPage() {
     const [formData, setFormData] = useState({ name: '', description: '' });
     const [editing, setEditing] = useState(null);
 
+    // Hàm tái sử dụng để gửi header với token đúng
+    const getAuthHeader = () => ({
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+    });
+
     const fetchInvoices = async () => {
         try {
-            const res = await axios.get('/api/invoices');
+            const res = await axios.get('/api/v1/invoices', getAuthHeader());
             setInvoices(res.data.data || []);
         } catch (err) {
-            console.error(err);
+            console.error('Error fetching invoices:', err);
         }
     };
 
@@ -28,12 +35,14 @@ function CollectionPeriodPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('/api/invoices', formData);
+            console.log('Sending token:', localStorage.getItem('accessToken'));
+            await axios.post('/api/v1/invoices', formData, getAuthHeader());
             alert('Tạo đợt thu thành công');
             setFormData({ name: '', description: '' });
             fetchInvoices();
         } catch (err) {
-            console.error(err);
+            console.error('Error creating invoice:', err);
+            alert('Lỗi khi tạo đợt thu');
         }
     };
 
@@ -44,21 +53,21 @@ function CollectionPeriodPage() {
 
     const handleEditSubmit = async () => {
         try {
-            await axios.put(`/api/invoices/${editing.id}`, editing);
+            await axios.put(`/api/v1/invoices/${editing.id}`, editing, getAuthHeader());
             setEditing(null);
             fetchInvoices();
         } catch (err) {
-            console.error(err);
+            console.error('Error updating invoice:', err);
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Xoá đợt thu này?')) return;
         try {
-            await axios.delete(`/api/invoices/${id}`);
+            await axios.delete(`/api/v1/invoices/${id}`, getAuthHeader());
             fetchInvoices();
         } catch (err) {
-            console.error(err);
+            console.error('Error deleting invoice:', err);
         }
     };
 

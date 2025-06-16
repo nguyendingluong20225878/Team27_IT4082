@@ -15,18 +15,16 @@ const createUser = async (req, res) => {
             return res.status(409).json({ success: false, message: 'User with this email already exists' });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-
+        // ❌ KHÔNG cần hash password ở đây nữa (vì model đã làm)
         const newUser = await User.create({
             email,
-            password: hashedPassword,
+            password,
             name,
             role,
-            phoneNumber: phoneNumber || null, // phoneNumber is optional
-            is_active: true,
+            phoneNumber: phoneNumber || null,
+            is_active: '1' // dùng chuỗi ENUM đúng format
         });
 
-        // Remove password from response for security
         const userResponse = newUser.toJSON();
         delete userResponse.password;
 
@@ -41,7 +39,7 @@ const createUser = async (req, res) => {
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.findAll({
-            attributes: { exclude: ['password', 'refreshToken'] } // Exclude sensitive info
+            attributes: { exclude: ['password', 'refreshToken'] }
         });
         res.status(200).json({ success: true, message: 'Users fetched successfully', data: users });
     } catch (err) {
@@ -80,7 +78,6 @@ const updateUser = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        // Prevent changing email if it already exists for another user
         if (email && email !== user.email) {
             const existingUserWithEmail = await User.findOne({ where: { email } });
             if (existingUserWithEmail) {
@@ -91,8 +88,11 @@ const updateUser = async (req, res) => {
         user.name = name || user.name;
         user.email = email || user.email;
         user.phoneNumber = phoneNumber || user.phoneNumber;
-        user.role = role || user.role; // Assuming role can be updated here
-        user.is_active = typeof is_active === 'boolean' ? is_active : user.is_active;
+        user.role = role || user.role;
+
+        if (typeof is_active !== 'undefined') {
+            user.is_active = is_active === true || is_active === 'true' || is_active === 1 ? '1' : '0';
+        }
 
         await user.save();
 
@@ -106,7 +106,7 @@ const updateUser = async (req, res) => {
     }
 };
 
-// Delete user (Xóa tài khoản)
+// Delete user (Xoá tài khoản)
 const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -124,7 +124,7 @@ const deleteUser = async (req, res) => {
     }
 };
 
-// Assign user role (Phân quyền cho tài khoản)
+// Assign user role (Phân quyền tài khoản)
 const assignUserRole = async (req, res) => {
     try {
         const { id } = req.params;
@@ -159,4 +159,4 @@ module.exports = {
     updateUser,
     deleteUser,
     assignUserRole,
-}; 
+};

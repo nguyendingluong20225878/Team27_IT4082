@@ -2,20 +2,32 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../database');
 
 const Vehicle = sequelize.define('Vehicle', {
-    license_plate: {
+    id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    licensePlate: {
         type: DataTypes.STRING,
-        primaryKey: true
+        allowNull: false,
+        field: 'license_plate'
     },
     type: {
         type: DataTypes.ENUM('car', 'motorcycle', 'bicycle'),
         allowNull: false
     },
-    apartment_id: {
+    apartmentId: {
         type: DataTypes.BIGINT,
+        allowNull: false,
+        field: 'apartment_id',
         references: {
             model: 'apartments',
             key: 'id'
         }
+    },
+    amount: {
+        type: DataTypes.DOUBLE,
+        defaultValue: 0
     },
     status: {
         type: DataTypes.ENUM('active', 'inactive'),

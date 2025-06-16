@@ -4,16 +4,31 @@ import './pages.css';
 
 function VehiclePage() {
     const [vehicles, setVehicles] = useState([]);
-    const [formData, setFormData] = useState({ licensePlate: '', type: '', apartment_id: '', status: 'active' });
+    const [formData, setFormData] = useState({
+        license_plate: '', // Giữ nguyên snake_case cho form input (req.body)
+        type: '',
+        apartment_id: ''   // Giữ nguyên snake_case cho form input (req.body)
+    });
     const [editing, setEditing] = useState(null);
     const [search, setSearch] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const fetchVehicles = async () => {
+        setLoading(true);
         try {
-            const res = await axios.get('/api/vehicles');
-            setVehicles(res.data.data);
+            const res = await axios.get('/api/v1/vehicles', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
+            // Dữ liệu nhận từ backend sẽ có các thuộc tính là camelCase (licensePlate, apartmentId)
+            // do Sequelize mặc định ánh xạ từ snake_case của DB
+            setVehicles(res.data.data || []);
         } catch (err) {
             console.error(err);
+            alert('Lỗi khi lấy danh sách phương tiện: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -28,49 +43,87 @@ function VehiclePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         try {
-            await axios.post('/api/vehicles', formData);
+            await axios.post('/api/v1/vehicles', formData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             alert('Thêm phương tiện thành công');
-            setFormData({ licensePlate: '', type: '', apartment_id: '', status: 'active' });
+            setFormData({ license_plate: '', type: '', apartment_id: '' });
             fetchVehicles();
         } catch (err) {
             console.error(err);
-            alert('Lỗi khi thêm phương tiện');
+            alert('Lỗi khi thêm phương tiện: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Xoá phương tiện này?')) return;
+        if (!window.confirm('Bạn có chắc chắn muốn xoá phương tiện này không?')) return;
+        setLoading(true);
         try {
-            await axios.delete(`/api/vehicles/${id}`);
+            await axios.delete(`/api/v1/vehicles/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
+            alert('Xoá phương tiện thành công');
             fetchVehicles();
         } catch (err) {
             console.error(err);
+            alert('Lỗi khi xoá phương tiện: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleEditClick = (v) => {
-        setEditing({ ...v });
+        // Khi chỉnh sửa, gán giá trị từ thuộc tính camelCase của `v`
+        // vào các trường snake_case của `editing` để khớp với input names
+        setEditing({
+            ...v,
+            license_plate: v.licensePlate, // LẤY TỪ licensePlate (camelCase) của object v
+            apartment_id: v.apartmentId   // LẤY TỪ apartmentId (camelCase) của object v
+        });
     };
 
     const handleEditChange = (e) => {
         const { name, value } = e.target;
-        setEditing({ ...editing, [name]: value });
+        setEditing(prev => ({ ...prev, [name]: value }));
     };
 
     const handleEditSubmit = async () => {
+        setLoading(true);
         try {
-            await axios.put(`/api/vehicles/${editing.id}`, editing);
+            const { id, license_plate, type, apartment_id } = editing;
+            // Gửi camelCase (licensePlate, apartmentId) cho backend updateVehicle
+            await axios.put(`/api/v1/vehicles/${id}`, {
+                licensePlate: license_plate, // Gửi license_plate (từ form) dưới tên licensePlate
+                type,
+                apartmentId: apartment_id    // Gửi apartment_id (từ form) dưới tên apartmentId
+            }, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
+            alert('Cập nhật phương tiện thành công');
             setEditing(null);
             fetchVehicles();
         } catch (err) {
             console.error(err);
+            alert('Lỗi khi cập nhật phương tiện: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Lọc theo cả licensePlate và apartmentId (camelCase) vì dữ liệu nhận được từ backend là camelCase
     const filtered = vehicles.filter(v =>
-        v.licensePlate.toLowerCase().includes(search.toLowerCase()) ||
-        v.apartment_id?.toString().includes(search)
+        v.licensePlate?.toLowerCase().includes(search.toLowerCase()) || // SỬA ĐỔI Ở ĐÂY
+        v.apartmentId?.toString().includes(search) // SỬA ĐỔI Ở ĐÂY
     );
 
     return (
@@ -89,7 +142,7 @@ function VehiclePage() {
             <form onSubmit={handleSubmit} className="account-form">
                 <h4>Thêm phương tiện</h4>
                 <div className="form-grid">
-                    <input name="licensePlate" placeholder="Biển số xe" value={formData.licensePlate} onChange={handleChange} required />
+                    <input name="license_plate" placeholder="Biển số xe" value={formData.license_plate} onChange={handleChange} required />
                     <select name="type" value={formData.type} onChange={handleChange} required>
                         <option value="">Chọn loại xe</option>
                         <option value="motorcycle">Xe máy</option>
@@ -97,12 +150,10 @@ function VehiclePage() {
                         <option value="bicycle">Xe đạp</option>
                     </select>
                     <input name="apartment_id" placeholder="Mã hộ (apartment_id)" value={formData.apartment_id} onChange={handleChange} required />
-                    <select name="status" value={formData.status} onChange={handleChange} required>
-                        <option value="active">Đang sử dụng</option>
-                        <option value="inactive">Ngưng sử dụng</option>
-                    </select>
                 </div>
-                <button type="submit" className="submit-btn">Thêm phương tiện</button>
+                <button type="submit" className="submit-btn" disabled={loading}>
+                    {loading ? 'Đang thêm...' : 'Thêm phương tiện'}
+                </button>
             </form>
 
             <div className="table-wrapper">
@@ -113,44 +164,45 @@ function VehiclePage() {
                             <th>Loại</th>
                             <th>Mã hộ</th>
                             <th>Phí gửi xe</th>
-                            <th>Trạng thái</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filtered.map(v => (
-                            <tr key={v.id}>
-                                <td>{editing?.id === v.id ? <input name="licensePlate" value={editing.licensePlate} onChange={handleEditChange} /> : v.licensePlate}</td>
-                                <td>{editing?.id === v.id ? (
-                                    <select name="type" value={editing.type} onChange={handleEditChange}>
-                                        <option value="motorcycle">Xe máy</option>
-                                        <option value="car">Ô tô</option>
-                                        <option value="bicycle">Xe đạp</option>
-                                    </select>
-                                ) : v.type}</td>
-                                <td>{editing?.id === v.id ? <input name="apartment_id" value={editing.apartment_id} onChange={handleEditChange} /> : v.apartment_id}</td>
-                                <td>{v.amount} đ</td>
-                                <td>{editing?.id === v.id ? (
-                                    <select name="status" value={editing.status} onChange={handleEditChange}>
-                                        <option value="active">Đang sử dụng</option>
-                                        <option value="inactive">Ngưng sử dụng</option>
-                                    </select>
-                                ) : v.status}</td>
-                                <td>
-                                    {editing?.id === v.id ? (
-                                        <>
-                                            <button onClick={handleEditSubmit}>Lưu</button>
-                                            <button onClick={() => setEditing(null)}>Huỷ</button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button onClick={() => handleEditClick(v)}>Sửa</button>
-                                            <button onClick={() => handleDelete(v.id)}>Xoá</button>
-                                        </>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
+                        {loading && filtered.length === 0 ? (
+                            <tr><td colSpan="5" style={{ textAlign: 'center' }}>Đang tải dữ liệu...</td></tr>
+                        ) : filtered.length === 0 ? (
+                            <tr><td colSpan="5" style={{ textAlign: 'center' }}>Không tìm thấy phương tiện nào.</td></tr>
+                        ) : (
+                            filtered.map(v => (
+                                <tr key={v.id}>
+                                    {/* SỬA ĐỔI Ở ĐÂY: Hiển thị v.licensePlate (camelCase) */}
+                                    <td>{editing?.id === v.id ? <input name="license_plate" value={editing.license_plate} onChange={handleEditChange} /> : v.licensePlate}</td>
+                                    <td>{editing?.id === v.id ? (
+                                        <select name="type" value={editing.type} onChange={handleEditChange}>
+                                            <option value="motorcycle">Xe máy</option>
+                                            <option value="car">Ô tô</option>
+                                            <option value="bicycle">Xe đạp</option>
+                                        </select>
+                                    ) : v.type}</td>
+                                    {/* SỬA ĐỔI Ở ĐÂY: Hiển thị v.apartmentId (camelCase) */}
+                                    <td>{editing?.id === v.id ? <input name="apartment_id" value={editing.apartment_id} onChange={handleEditChange} /> : v.apartmentId}</td>
+                                    <td>{v.amount} đ</td>
+                                    <td>
+                                        {editing?.id === v.id ? (
+                                            <>
+                                                <button onClick={handleEditSubmit} disabled={loading}>Lưu</button>
+                                                <button onClick={() => setEditing(null)} disabled={loading}>Huỷ</button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => handleEditClick(v)} disabled={loading}>Sửa</button>
+                                                <button onClick={() => handleDelete(v.id)} disabled={loading}>Xoá</button>
+                                            </>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

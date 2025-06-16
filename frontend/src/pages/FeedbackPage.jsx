@@ -8,7 +8,11 @@ function FeedbackPage() {
 
     const fetchFeedbacks = async () => {
         try {
-            const res = await axios.get('/api/feedbacks');
+            const res = await axios.get('/api/v1/feedback', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             setFeedbacks(res.data.data || []);
         } catch (err) {
             console.error(err);
@@ -27,7 +31,11 @@ function FeedbackPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('/api/feedbacks', formData);
+            await axios.post('/api/v1/feedback', formData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             alert('Gửi phản ánh thành công');
             setFormData({ residentId: '', apartmentId: '', reportType: '', description: '' });
             fetchFeedbacks();

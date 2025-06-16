@@ -9,16 +9,21 @@ function AccountPage() {
         password: '',
         name: '',
         role: 'accountant',
-        phoneNumber: ''
+        phoneNumber: '',
+        is_active: '1' // ✅ ENUM '1' = true
     });
     const [editing, setEditing] = useState(null);
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get('/api/users');
+            const res = await axios.get('/api/v1/users', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             setUsers(res.data.data);
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi fetchUsers:', err.response?.data || err.message);
         }
     };
 
@@ -34,12 +39,24 @@ function AccountPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('/api/users', formData);
+            await axios.post('/api/v1/users', formData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             alert('Tạo tài khoản thành công');
-            setFormData({ email: '', password: '', name: '', role: 'accountant', phoneNumber: '' });
+            setFormData({
+                email: '',
+                password: '',
+                name: '',
+                role: 'accountant',
+                phoneNumber: '',
+                is_active: '1'
+            });
             fetchUsers();
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi tạo tài khoản:', err.response?.data || err.message);
+            alert('Tạo tài khoản thất bại: ' + (err.response?.data?.message || 'Lỗi không xác định'));
         }
     };
 
@@ -50,21 +67,29 @@ function AccountPage() {
 
     const handleEditSubmit = async () => {
         try {
-            await axios.put(`/api/users/${editing.id}`, editing);
+            await axios.put(`/api/v1/users/${editing.id}`, editing, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             setEditing(null);
             fetchUsers();
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi cập nhật tài khoản:', err.response?.data || err.message);
         }
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Xoá tài khoản này?')) return;
         try {
-            await axios.delete(`/api/users/${id}`);
+            await axios.delete(`/api/v1/users/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             fetchUsers();
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi xoá tài khoản:', err.response?.data || err.message);
         }
     };
 
@@ -82,6 +107,10 @@ function AccountPage() {
                     <select name="role" value={formData.role} onChange={handleChange}>
                         <option value="admin">Quản trị viên</option>
                         <option value="accountant">Kế toán</option>
+                    </select>
+                    <select name="is_active" value={formData.is_active} onChange={handleChange}>
+                        <option value="1">Kích hoạt</option>
+                        <option value="0">Vô hiệu hoá</option>
                     </select>
                 </div>
                 <button type="submit" className="submit-btn">Tạo tài khoản</button>
@@ -112,11 +141,15 @@ function AccountPage() {
                                 ) : user.role}</td>
                                 <td>{editing?.id === user.id ? <input name="phoneNumber" value={editing.phoneNumber} onChange={handleEditChange} /> : user.phoneNumber}</td>
                                 <td>{editing?.id === user.id ? (
-                                    <select name="is_active" value={editing.is_active ? 'true' : 'false'} onChange={e => handleEditChange({ target: { name: 'is_active', value: e.target.value === 'true' } })}>
-                                        <option value="true">Kích hoạt</option>
-                                        <option value="false">Vô hiệu hoá</option>
+                                    <select
+                                        name="is_active"
+                                        value={editing.is_active}
+                                        onChange={handleEditChange}
+                                    >
+                                        <option value="1">Kích hoạt</option>
+                                        <option value="0">Vô hiệu hoá</option>
                                     </select>
-                                ) : user.is_active ? 'Kích hoạt' : 'Vô hiệu hoá'}</td>
+                                ) : user.is_active === '1' ? 'Kích hoạt' : 'Vô hiệu hoá'}</td>
                                 <td>
                                     {editing?.id === user.id ? (
                                         <>

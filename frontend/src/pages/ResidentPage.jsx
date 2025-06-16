@@ -11,14 +11,20 @@ function ResidentPage() {
         cic: '',
         address_number: '',
         status: '',
-        status_date: ''
+        status_date: '',
+        email: '',
+        phoneNumber: ''
     });
     const [editing, setEditing] = useState(null);
     const [search, setSearch] = useState('');
 
     const fetchResidents = async () => {
         try {
-            const res = await axios.get('/api/residents');
+            const res = await axios.get('/api/v1/residents/all', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             setResidents(res.data.data || []);
         } catch (err) {
             console.error(err);
@@ -37,12 +43,24 @@ function ResidentPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('/api/residents', formData);
+            const payload = {
+                ...formData,
+                status_date: formData.status_date && !isNaN(new Date(formData.status_date))
+                    ? formData.status_date
+                    : null
+            };
+
+            await axios.post('/api/v1/residents', payload, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             alert('Thêm nhân khẩu thành công');
-            setFormData({ name: '', dob: '', gender: '', cic: '', address_number: '', status: '', status_date: '' });
+            setFormData({ name: '', dob: '', gender: '', cic: '', address_number: '', status: '', status_date: '', email: '', phoneNumber: '' });
             fetchResidents();
         } catch (err) {
-            console.error(err);
+            console.error('Lỗi thêm nhân khẩu:', err.response?.data || err.message);
+            alert('Thêm thất bại: ' + (err.response?.data?.message || 'Lỗi không xác định'));
         }
     };
 
@@ -53,7 +71,11 @@ function ResidentPage() {
 
     const handleEditSubmit = async () => {
         try {
-            await axios.put(`/api/residents/${editing.id}`, editing);
+            await axios.put(`/api/v1/residents/${editing.id}`, editing, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             setEditing(null);
             fetchResidents();
         } catch (err) {
@@ -64,7 +86,11 @@ function ResidentPage() {
     const handleDelete = async (id) => {
         if (!window.confirm('Xoá nhân khẩu này?')) return;
         try {
-            await axios.delete(`/api/residents/${id}`);
+            await axios.delete(`/api/v1/residents/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
             fetchResidents();
         } catch (err) {
             console.error(err);
@@ -99,6 +125,8 @@ function ResidentPage() {
                     <input name="address_number" placeholder="Mã địa chỉ" value={formData.address_number} onChange={handleChange} required />
                     <input name="status" placeholder="Tình trạng cư trú" value={formData.status} onChange={handleChange} />
                     <input name="status_date" type="date" placeholder="Ngày cập nhật tình trạng" value={formData.status_date} onChange={handleChange} />
+                    <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+                    <input name="phoneNumber" placeholder="SĐT" value={formData.phoneNumber} onChange={handleChange} required />
                 </div>
                 <button type="submit" className="submit-btn">Thêm nhân khẩu</button>
             </form>
@@ -111,6 +139,8 @@ function ResidentPage() {
                             <th>Ngày sinh</th>
                             <th>Giới tính</th>
                             <th>CMND/CCCD</th>
+                            <th>Email</th>
+                            <th>SĐT</th>
                             <th>Mã địa chỉ</th>
                             <th>Tình trạng</th>
                             <th>Ngày cập nhật</th>
@@ -124,6 +154,8 @@ function ResidentPage() {
                                 <td>{editing?.id === res.id ? <input name="dob" type="date" value={editing.dob} onChange={handleEditChange} /> : res.dob}</td>
                                 <td>{editing?.id === res.id ? <input name="gender" value={editing.gender} onChange={handleEditChange} /> : res.gender}</td>
                                 <td>{editing?.id === res.id ? <input name="cic" value={editing.cic} onChange={handleEditChange} /> : res.cic}</td>
+                                <td>{editing?.id === res.id ? <input name="email" value={editing.email} onChange={handleEditChange} /> : res.email}</td>
+                                <td>{editing?.id === res.id ? <input name="phoneNumber" value={editing.phoneNumber} onChange={handleEditChange} /> : res.phoneNumber}</td>
                                 <td>{editing?.id === res.id ? <input name="address_number" value={editing.address_number} onChange={handleEditChange} /> : res.address_number}</td>
                                 <td>{editing?.id === res.id ? <input name="status" value={editing.status} onChange={handleEditChange} /> : res.status}</td>
                                 <td>{editing?.id === res.id ? <input name="status_date" type="date" value={editing.status_date} onChange={handleEditChange} /> : res.status_date}</td>
